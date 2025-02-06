@@ -1,7 +1,9 @@
 ##########################
-<br/>
-` npm install 
+
+```bash
+npm install
 npm run server
-npm start`
-<br/>
+npm start
+```
+
 ###########################
