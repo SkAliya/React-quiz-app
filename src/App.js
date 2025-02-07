@@ -1,4 +1,4 @@
-import { useEffect, useReducer, useState } from "react";
+import { useEffect, useReducer } from "react";
 import Header from "./Header";
 import Loader from "./Loader";
 import Error from "./Error";
@@ -13,6 +13,7 @@ const initialState = {
   crrtAns: false,
   points: 0,
   heighScore: 0,
+  secondsRemaining: null,
 };
 
 function reducer(state, action) {
@@ -22,7 +23,11 @@ function reducer(state, action) {
     case "ready":
       return { ...state, status: "ready", questions: action.payload };
     case "active":
-      return { ...state, status: "active" };
+      return {
+        ...state,
+        status: "active",
+        secondsRemaining: state.questions?.length * 60,
+      };
     case "error":
       return { ...state, status: "error" };
     case "ansSelected":
@@ -55,7 +60,14 @@ function reducer(state, action) {
         questions: state.questions,
         heighScore: state.heighScore,
       };
-
+    case "finish":
+      return {
+        ...state,
+        secondsRemaining: state.secondsRemaining - 1,
+        status: state.secondsRemaining === 0 ? "finish" : state.status,
+        heighScore:
+          state.heighScore < state.points ? state.points : state.heighScore,
+      };
     default:
       return "something went wrong done";
   }
@@ -72,6 +84,7 @@ function App() {
       crrtAns,
       points,
       heighScore,
+      secondsRemaining,
     },
     dispatch,
   ] = useReducer(reducer, initialState);
@@ -105,6 +118,7 @@ function App() {
         points={points}
         status={status}
         heighScore={heighScore}
+        secondsRemaining={secondsRemaining}
       />
     </div>
   );
@@ -122,6 +136,7 @@ function Main({
   points,
   status,
   heighScore,
+  secondsRemaining,
 }) {
   return (
     <main className="main">
@@ -145,6 +160,7 @@ function Main({
             isCrrtAns={isCrrtAns}
             crrtAns={crrtAns}
             currQue={currQue}
+            secondsRemaining={secondsRemaining}
           />
         </>
       )}
@@ -175,7 +191,29 @@ function StarterScreen({ questions, dispatch }) {
   );
 }
 
-function Question({ question, dispatch, isCrrtAns, ansId, crrtAns, currQue }) {
+function Question({
+  question,
+  dispatch,
+  isCrrtAns,
+  ansId,
+  crrtAns,
+  currQue,
+  secondsRemaining,
+}) {
+  const mins = Math.floor(secondsRemaining / 60)
+    .toString()
+    .padStart(2, "0");
+  const secs = (secondsRemaining % 60).toString().padStart(2, "0");
+
+  useEffect(
+    function () {
+      const time = setInterval(() => dispatch({ type: "finish" }), 1000);
+
+      return () => clearInterval(time);
+    },
+
+    [dispatch]
+  );
   return (
     <>
       {" "}
@@ -201,6 +239,9 @@ function Question({ question, dispatch, isCrrtAns, ansId, crrtAns, currQue }) {
       >
         {ansId && currQue >= 14 ? "Finish Test" : "Next"}
       </button>
+      <div className="timer">
+        {mins}:{secs}
+      </div>
     </>
   );
 }
